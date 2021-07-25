@@ -6,6 +6,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\ReservationsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,4 +26,9 @@ Route::get('/user', [UsersController::class, 'get']);
 Route::get('/getShopInfo', [UsersController::class, 'getShopInfo']);
 Route::get('/getshops', [UsersController::class, 'getshops']);
 Route::put('/user', [UsersController::class, 'put']);
+Route::get('/getSlot', [ReservationsController::class, 'getSlot']);
+Route::get('/getAvailableTableId', [ReservationsController::class, 'getAvailableTableId']);
+Route::post('/confirmReservation', [ReservationsController::class, 'confirmReservation']);
+
+
 
