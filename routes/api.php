@@ -28,7 +28,8 @@ Route::get('/getshops', [UsersController::class, 'getshops']);
 Route::put('/user', [UsersController::class, 'put']);
 Route::get('/getSlot', [ReservationsController::class, 'getSlot']);
 Route::get('/getAvailableTableId', [ReservationsController::class, 'getAvailableTableId']);
-Route::post('/confirmReservation', [ReservationsController::class, 'confirmReservation']);
+Route::get('/confirmDateTime', [ReservationsController::class, 'confirmDateTime']);
+Route::post('/confirmDateTime', [ReservationsController::class, 'confirmDateTime']);
 
 
 

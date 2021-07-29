@@ -93,11 +93,19 @@ class ReservationsController extends Controller
         // 日付ごとにforeach ※foreachの予定だったが、126行目からのような形にはまとまらず、ひとまずforで代用した
         $day_available_array =[];
         for($i = 0; count($dates) > $i; $i++) {
-            array_push($day_available_array, $dates[$i]);
+            array_push($day_available_array, [$dates[$i]]);
             for($j = 0; count($times) > $j; $j++){
                 array_push($day_available_array[$i], [$times[$j]=> $this->judge($shop_id, $dateAndTime, $number, $period)]);
             }
         }
+
+        // for($i = 0; count($dates) > $i; $i++) {
+        //     array_push($day_available_array, $dates[$i]);
+        //     for($j = 0; count($times) > $j; $j++){
+        //         array_push($day_available_array[$i], [$times[$j]=> $this->judge($shop_id, $dateAndTime, $number, $period)]);
+        //     }
+        // }
+
 
         // $day_available_array =[];
         // foreach($dates as $date){
@@ -107,22 +115,8 @@ class ReservationsController extends Controller
         //     }
         // }
 
-        $items = [
-            "shop_id" => $shop_id,
-            "user_id" => $user_id,
-            "startDate" => $startDate,
-            "number" => $number,
-            "open" => $open,
-            "close" => $close,
-            "period" => $period,
-            "dates" => $dates,
-            "datesOneMonthAhead" => $datesOneMonthAhead,
-            "times" => $times,
-            "dateAndTime" => $dateAndTime,
-            "day_available_array" => $day_available_array,
-        ];
-        return response()->json($items, 200);
-
+        // 理想的な$day_available_arrayの形
+        // 
         // [
         //     "2021-06-20"=>[
         //         '10:00'=>true, //その時間の空いている席が一個でもあればtrue
@@ -140,11 +134,28 @@ class ReservationsController extends Controller
         //         12:00=>false,
         //     ],
         //     ]
+
+        $items = [
+            // "shop_id" => $shop_id,
+            // "user_id" => $user_id,
+            // "startDate" => $startDate,
+            // "number" => $number,
+            // "open" => $open,
+            // "close" => $close,
+            // "period" => $period,
+            "dates" => $dates,
+            "datesOneMonthAhead" => $datesOneMonthAhead,
+            "times" => $times,
+            // "dateAndTime" => $dateAndTime,
+            "day_available_array" => $day_available_array,
+        ];
+        return response()->json($items, 200);
     }
     public function judge($shop_id, $dateAndTime, $number, $period)
     {
         $availableIds = $this->getAvailableTableId($shop_id, $dateAndTime, $number, $period);
         // 各テーブルに対して(以下の中で1個でもtrueが出てきたらtrue)
+        // dd("availableIds",$availableIds);
         return count($availableIds) > 0;
     }
 
@@ -184,6 +195,7 @@ class ReservationsController extends Controller
                 }
                 array_push($availableTableIds, $table->id);
         }
+        return $availableTableIds;
         // $test = count($availableTableIds);
 
         // $items = [
@@ -198,6 +210,66 @@ class ReservationsController extends Controller
         // ];
         // return response()->json($items, 200);
 
+    }
+
+    public function confirmDateTime (Request $request){
+
+        // フロントから送ったものをまとめる
+        $user_id = intval($request->user_id);
+        $shop_id = intval($request->shop_id);
+        $dateAndTime = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($request->date)) ." ". $request->time));
+        $number = intval($request->number);
+        // DD("$user_id",$user_id);
+
+        // 空いているtable_idを見つける
+        $table_id = Table::where('capacity', '>=', $number)
+            ->where('shop_id', $shop_id)
+            ->first()
+            // postにすると下のidがとれなくなる
+            ->id;
+        
+        // DD("$table_id",$table_id);
+
+        // $items = [
+        //     "user_id" => $user_id,
+        //     "shop_id" => $shop_id,
+        //     "dateAndTime" => $dateAndTime,
+        //     "number" => $number,
+        //     "table_id" => $table_id,
+        // ];
+
+        // return response()->json($items, 200);
+
+        $item = new Reservation;
+        $item->user_id = $user_id;
+        $item->shop_id = $shop_id;
+        $item->table_id = $table_id;
+        $item->date_time = $dateAndTime;
+        $item->number_of_people = $number;
+
+        // return response()->json($item, 200);
+
+        $item->save();
+        return response()->json([
+            'message' => 'Reservation created successfully',
+            'data' => $item
+        ], 200);
+
+
+
+        // $item = new Reservation;
+        // $item->user_id = intval($request->user_id);
+        // $item->shop_id = intval($request->shop_id);
+        // $item->table_id = Table::where('capacity', '>=', intval($request->number))
+        //                         ->where('shop_id', intval($request->shop_id))
+        //                         ->first();
+        // $item->date_time = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($request->date)) ." ". $request->time));
+        // $item->number_of_people = intval($request->number)
+        // $item->save();
+        // return response()->json([
+        //     'message' => 'Reservation created successfully',
+        //     'data' => $item
+        // ], 200);
     }
 
 }
