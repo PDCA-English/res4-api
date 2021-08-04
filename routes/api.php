@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\ReservationsController;
+use App\Http\Controllers\FavoritesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,9 +28,16 @@ Route::get('/getShopInfo', [UsersController::class, 'getShopInfo']);
 Route::get('/getshops', [UsersController::class, 'getshops']);
 Route::put('/user', [UsersController::class, 'put']);
 Route::get('/getSlot', [ReservationsController::class, 'getSlot']);
+Route::get('/deleteReservation', [ReservationsController::class, 'deleteReservation']);
+Route::delete('/deleteReservation', [ReservationsController::class, 'deleteReservation']);
 Route::get('/getAvailableTableId', [ReservationsController::class, 'getAvailableTableId']);
+Route::get('/getMyReservation', [ReservationsController::class, 'getMyReservation']);
 Route::get('/confirmDateTime', [ReservationsController::class, 'confirmDateTime']);
 Route::post('/confirmDateTime', [ReservationsController::class, 'confirmDateTime']);
+Route::get('/favorite', [FavoritesController::class, 'get']);
+Route::post('/favorite', [FavoritesController::class, 'post']);
+Route::delete('/favorite', [FavoritesController::class, 'delete']);
+
 
 
 

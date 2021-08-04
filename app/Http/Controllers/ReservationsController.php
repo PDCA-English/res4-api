@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Reservation;
 use App\Models\Table;
+use App\Models\User;
 use Carbon\Carbon;
 
 class ReservationsController extends Controller
@@ -56,7 +57,7 @@ class ReservationsController extends Controller
         $period = intval($request->period);
 
         // 取得した予約希望時間と日付をまとめる
-        $dateAndTime = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($request->date)) ." ". $request->time));
+        // $dateAndTime = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($request->date)) ." ". $request->time));
 
 
         // 日付の配列に曜日をつけるため
@@ -90,12 +91,25 @@ class ReservationsController extends Controller
             array_push($times, $nextTime);
         }
 
+        // 表示される予約枠すべてを取得
+        // $reservings = [];
+        // foreach($dates as $date){
+        //     foreach($times as $time){
+        //         array_push($reservings, [
+        //             date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date[0])) ." ". $time)),
+        //             date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime(date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date[0])) ." ". $time)))))
+        //         ]);
+        //     }
+        // }
+
         // 日付ごとにforeach ※foreachの予定だったが、126行目からのような形にはまとまらず、ひとまずforで代用した
         $day_available_array =[];
         for($i = 0; count($dates) > $i; $i++) {
             array_push($day_available_array, [$dates[$i]]);
             for($j = 0; count($times) > $j; $j++){
-                array_push($day_available_array[$i], [$times[$j]=> $this->judge($shop_id, $dateAndTime, $number, $period)]);
+                // DD($dates[$i]);
+                $startTime = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($dates[$i][0])) ." ". $times[$j]));
+                array_push($day_available_array[$i], [$times[$j]=> $this->judge($shop_id, $startTime, $number, $period)]);
             }
         }
 
@@ -135,6 +149,7 @@ class ReservationsController extends Controller
         //     ],
         //     ]
 
+
         $items = [
             // "shop_id" => $shop_id,
             // "user_id" => $user_id,
@@ -143,23 +158,24 @@ class ReservationsController extends Controller
             // "open" => $open,
             // "close" => $close,
             // "period" => $period,
+            // "dateAndTime" => $dateAndTime,
             "dates" => $dates,
             "datesOneMonthAhead" => $datesOneMonthAhead,
             "times" => $times,
-            // "dateAndTime" => $dateAndTime,
             "day_available_array" => $day_available_array,
         ];
         return response()->json($items, 200);
     }
-    public function judge($shop_id, $dateAndTime, $number, $period)
+
+    public function judge($shop_id, $startTime, $number, $period)
     {
-        $availableIds = $this->getAvailableTableId($shop_id, $dateAndTime, $number, $period);
+        $availableIds = $this->getAvailableTableId($shop_id, $startTime, $number, $period);
         // 各テーブルに対して(以下の中で1個でもtrueが出てきたらtrue)
         // dd("availableIds",$availableIds);
         return count($availableIds) > 0;
     }
 
-    public function getAvailableTableId($shop_id, $dateAndTime, $number, $period)
+    public function getAvailableTableId($shop_id, $startTime, $number, $period)
     // public function getAvailableTableId(Request $request)
     {
 
@@ -175,13 +191,28 @@ class ReservationsController extends Controller
 
         // 空いている席のIDを取得する
         $availableTableIds = [];
-        // 予約しようとしている時間幅を取得
+        // 予約可能な時間枠を取得
+
+        // $reserving = [];
+        // for($i = 0; count($dates) > $i; $i++){
+        //     for($j = 0; count($times) > $j; $j++){
+        //         array_push($reserving,
+        //         [
+        //             date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($dateAndTime))),
+        //             date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($dateAndTime))),
+        //         ])
+        //         )
+        //     }
+        // }
+
         $reserving = [
-            "start"=> $dateAndTime,
-            "end"=> date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($dateAndTime))),
+            "start"=> $startTime,
+            "end"=> date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($startTime))),
         ];
 
+        // DD("reserving",$reserving);
 
+        // おそらくここの時間でフィルターしている部分がうまく動いていない
         // ②各テーブルに対して今までの予約を見る
         foreach($tables as $table){
             // $reservationsOnTheDayその日の予約群(reservations)を検索 (wheredateを使うとできる DDでworkしてるか確認)
@@ -270,6 +301,45 @@ class ReservationsController extends Controller
         //     'message' => 'Reservation created successfully',
         //     'data' => $item
         // ], 200);
+    }
+
+    public function getMyReservation(Request $request)
+    {
+        $user_id = intval($request->user_id);
+        $data = Reservation::where('user_id', $user_id)->get();
+        $items = [];
+        foreach($data as $item){
+            array_push($items, [
+                $item["shop_id"],
+                date('Y', strtotime($item["date_time"])),
+                date('n', strtotime($item["date_time"])),
+                date('j', strtotime($item["date_time"])),
+                date('D', strtotime($item["date_time"])),
+                date('H:i', strtotime($item["date_time"])),
+                $item["number_of_people"],
+                $item["id"],
+            ]);
+        };
+        return $items;
+        return response()->json($items, 200);
+
+    }
+
+
+    public function deleteReservation(Request $request)
+    {
+        $item = Reservation::where('id', $request->id)->delete();
+        if ($item) {
+            return response()->json(
+                ['message' => 'Reservation deleted successfully'],
+                200
+            );
+        } else {
+            return response()->json(
+                ['message' => 'Reservation not found'],
+                404
+            );
+        }
     }
 
 }
