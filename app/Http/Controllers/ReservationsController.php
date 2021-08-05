@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Table;
 use App\Models\User;
 use Carbon\Carbon;
+use Facade\Ignition\Tabs\Tab;
 
 class ReservationsController extends Controller
 {
@@ -149,7 +150,6 @@ class ReservationsController extends Controller
         //     ],
         //     ]
 
-
         $items = [
             // "shop_id" => $shop_id,
             // "user_id" => $user_id,
@@ -207,26 +207,37 @@ class ReservationsController extends Controller
 
         $reserving = [
             "start"=> $startTime,
-            "end"=> date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($startTime))),
+            "end"=> date('Y-m-d H:i:s',strtotime("+ ".($period)." minute", strtotime($startTime))),
         ];
+        // var_dump($reserving);
 
         // DD("reserving",$reserving);
 
         // おそらくここの時間でフィルターしている部分がうまく動いていない
         // ②各テーブルに対して今までの予約を見る
+        // フロントで選択した店かつ予約人数よりもキャパの大きい席の空き状況を１つ１つ調べる
         foreach($tables as $table){
             // $reservationsOnTheDayその日の予約群(reservations)を検索 (wheredateを使うとできる DDでworkしてるか確認)
-            $reservationsOnTheDay = Table::where('shop_id', $shop_id)->get();
+            // $reservationsOnTheDay = Reservation::where('table_id', $table->id)->get();
+            $reservationsOnTheDay = Reservation::whereDate('date_time', '=' , date("Y-m-d", strtotime($reserving["start"])))->get();
                 $judge = true;
                 // carbonを使ってうまく比較する
+                // 全ての表示されるコマが現在の予約状況に照らし合わせて空いているかを判断する
                 foreach($reservationsOnTheDay as $reservation){
-                    if($judge = $reserving["end"]<$reservation["date_time"]  || $reserving["start"]< date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($reservation["date_time"]))))
-                    return false;{
+                    // var_dump($reserving["end"]);
+                    // var_dump($reservation["date_time"]);
+                    if($judge = $reserving["end"] < $reservation["date_time"]  || $reserving["start"] < date('Y-m-d H:i:s',strtotime("+ ".($period)." minute", strtotime($reservation["date_time"]))))
+                    // return false;{
+                    {
+                        array_push($availableTableIds, $table->id);
                     }
                 }
-                array_push($availableTableIds, $table->id);
+                // array_push($availableTableIds, $table->id);
+                // var_dump($availableTableIds);
+                
         }
         return $availableTableIds;
+        // dd($availableTableIds);
         // $test = count($availableTableIds);
 
         // $items = [
