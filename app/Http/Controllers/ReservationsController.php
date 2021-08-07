@@ -171,7 +171,7 @@ class ReservationsController extends Controller
     {
         $availableIds = $this->getAvailableTableId($shop_id, $startTime, $number, $period);
         // 各テーブルに対して(以下の中で1個でもtrueが出てきたらtrue)
-        // dd("availableIds",$availableIds);
+        // var_dump("availableIds",$availableIds);
         return count($availableIds) > 0;
     }
 
@@ -227,12 +227,12 @@ class ReservationsController extends Controller
                     // var_dump($reserving["end"]);
                     // var_dump($reservation["date_time"]);
                     if($judge = $reserving["end"] < $reservation["date_time"]  || $reserving["start"] < date('Y-m-d H:i:s',strtotime("+ ".($period)." minute", strtotime($reservation["date_time"]))))
-                    // return false;{
-                    {
-                        array_push($availableTableIds, $table->id);
+                    return false;{
+                    // {
+                        // array_push($availableTableIds, $table->id);
                     }
                 }
-                // array_push($availableTableIds, $table->id);
+                array_push($availableTableIds, $table->id);
                 // var_dump($availableTableIds);
                 
         }
