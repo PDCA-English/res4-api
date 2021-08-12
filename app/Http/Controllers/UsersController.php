@@ -35,28 +35,6 @@ class UsersController extends Controller
 
     public function getShopInfo(Request $request)
     {
-        // $item = User::where('id', $request->id)->first();
-        // return $item;
-        // $name = $item->name;
-        // $region = $item->region;
-        // $genre = $item->genre;
-        // $info = $item->info;
-        // $img_url = $item->img_url;
-        // $open = $item->open;
-        // $close = $item->close;
-        // $period = $item->period;
-        // $items = [
-        //     "name" => $name,
-        //     "region" => $region,
-        //     "genre" => $genre,
-        //     "info" => $info,
-        //     "img_url" => $img_url,
-        //     "open" => $open,
-        //     "close" => $close,
-        //     "period" => $period,
-        // ];
-        // return response()->json($items, 200);
-        
         $shop_id = $request->id;
         $shop = User::where('id', $shop_id)->first();
         $table = Table::where('shop_id', $shop_id)->get();
@@ -71,6 +49,28 @@ class UsersController extends Controller
         return response()->json($shops, 200);
     }
 
+    public function getShopDetail(Request $request)
+    {
+        $shopDetail = [];
+        $user_id = $request->user_id;
+        $shops = User::where('type', 2)->get();
+        foreach($shops as $shop) {
+            $shop_id = $shop->id;
+            $table = Table::where('shop_id', $shop_id)->get();
+            $reservation = Reservation::where('shop_id', $shop_id)->get();
+            $favorite = Favorite::where('shop_id', $shop_id)->where('user_id', $user_id)->first();
+            $eachShopDetail = [
+                "shop" => $shop,
+                "table" => $table,
+                "reservation" => $reservation,
+                "favorite" => $favorite,
+            ];
+            array_push($shopDetail, $eachShopDetail);
+        }
+        return response()->json($shopDetail, 200);
+    }
+
+
     public function put(Request $request)
     {
         $param = [
@@ -83,4 +83,31 @@ class UsersController extends Controller
             'data' => $param
         ], 200);
     }
+
+    public function deleteShop(Request $request)
+    {
+        DB::table('users')->where('id', $request->id)->delete();
+        return response()->json([
+            'message' => 'Shop deleted successfully',
+        ], 200);
+    }
+
+    public function updateShopInfo(Request $request)
+    {
+        $param = [
+            'name' => $request->name,
+            'img_url' => $request->img_url,
+            'region' => $request->region,
+            'genre' => $request->genre,
+            'info' => $request->info,
+        ];
+        DB::table('users')->where('id', $request->id)->update($param);
+        return response()->json([
+            'message' => 'Shop updated successfully',
+            'data' => $param
+        ], 200);
+    }
+
+
+    
 }

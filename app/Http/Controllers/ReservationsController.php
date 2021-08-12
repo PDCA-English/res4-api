@@ -321,19 +321,18 @@ class ReservationsController extends Controller
         $items = [];
         foreach($data as $item){
             array_push($items, [
-                $item["shop_id"],
-                date('Y', strtotime($item["date_time"])),
-                date('n', strtotime($item["date_time"])),
-                date('j', strtotime($item["date_time"])),
-                date('D', strtotime($item["date_time"])),
-                date('H:i', strtotime($item["date_time"])),
-                $item["number_of_people"],
-                $item["id"],
+                "shop" => User::where('id', $item->shop_id)->first(),
+                "reservation" => [
+                    date('Y', strtotime($item["date_time"])),
+                    date('n', strtotime($item["date_time"])),
+                    date('j', strtotime($item["date_time"])),
+                    date('D', strtotime($item["date_time"])),
+                    date('H:i', strtotime($item["date_time"])),
+                    $item["number_of_people"],
+                    $item["id"],
+                ]
             ]);
         };
-        return $items;
-        return response()->json($items, 200);
-
     }
 
 

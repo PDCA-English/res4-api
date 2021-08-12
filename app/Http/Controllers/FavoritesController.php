@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Favorite;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 class FavoritesController extends Controller
 {
+
     public function get(Request $request)
     {
         // DD("user_id",$request->user_id);
@@ -21,8 +23,6 @@ class FavoritesController extends Controller
             ], 200);
         }
     }
-
-
 
     public function post(Request $request)
     {
@@ -39,6 +39,7 @@ class FavoritesController extends Controller
             'data' => $param
         ], 200);
     }
+
     public function delete(Request $request)
     {
         DB::table('favorites')->where('user_id', $request->user_id)->where('shop_id', $request->shop_id)->delete();
@@ -47,6 +48,18 @@ class FavoritesController extends Controller
         ], 200);
     }
 
-    
+    public function getMyFavorite(Request $request)
+    {
+        $shopDetail = [];
+        $user_id = $request->user_id;
+        $favorites = Favorite::where('user_id', $user_id)->get();
+        foreach($favorites as $favorite) {
+            $shop_id = $favorite->shop_id;
+            $shop = User::where('id', $shop_id)->first();
+            array_push($shopDetail, $shop);
+        }
+        return response()->json($shopDetail, 200);
+    }
+
 
 }
