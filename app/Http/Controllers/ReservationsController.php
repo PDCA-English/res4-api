@@ -50,6 +50,7 @@ class ReservationsController extends Controller
         $shop_id = intval($request->shop_id);
         $user_id = intval($request->user_id);
         $startDate = date('Y-m-d', strtotime($request->startDate));
+        $startDate = date('Y-m-d', strtotime('+9hour'));
         $number = intval($request->number);
         // 時刻として認識させるために一度適当な日付（startDate）をくっつけてから時刻へ変換
         $open = date("H:i", strtotime($startDate ." ". $request->open));
@@ -79,7 +80,7 @@ class ReservationsController extends Controller
         }
         // 今日から30日間の配列を作る
         $datesOneMonthAhead = [];
-        $today = date("Y-m-d");
+        $today = date('Y-m-d H:i:s', strtotime('+9hour'));
         for ($j = 0; $j < 30; $j++) {
             array_push($datesOneMonthAhead, [date("Y-m-d",strtotime("+{$j} day", strtotime($today))),date("Y",strtotime("+{$j} day", strtotime($today))),date("m",strtotime("+{$j} day", strtotime($today))),date("d",strtotime("+{$j} day", strtotime($today))),$week[date('w',strtotime("+{$j} day", strtotime($startDate)))]]);
         }
@@ -171,14 +172,16 @@ class ReservationsController extends Controller
     {
         $availableIds = $this->getAvailableTableId($shop_id, $startTime, $number, $period);
         // 各テーブルに対して(以下の中で1個でもtrueが出てきたらtrue)
-        // var_dump("availableIds",$availableIds);
-        return count($availableIds) > 0;
+        // そのままreturn count($availableIds) > 0;とすると$availableIdsが空のときにエラーになるのでis_arrayを使ってエラーになるときを避ける
+        // https://qiita.com/masaki-ogawa/items/1671d110b2286ececd09#:~:text=if%20(is_array(%24hoge))%20%7B%0A%20%20%20%20count(%24hoge)%3B%0A%7D
+        if (is_array($availableIds)) {
+            return count($availableIds) > 0;
+        }
     }
 
     public function getAvailableTableId($shop_id, $startTime, $number, $period)
     // public function getAvailableTableId(Request $request)
     {
-
         // $shop_id = intval($request->shop_id);
         // $number = intval($request->number);
         // $period = intval($request->period);
@@ -191,27 +194,16 @@ class ReservationsController extends Controller
 
         // 空いている席のIDを取得する
         $availableTableIds = [];
-        // 予約可能な時間枠を取得
-
-        // $reserving = [];
-        // for($i = 0; count($dates) > $i; $i++){
-        //     for($j = 0; count($times) > $j; $j++){
-        //         array_push($reserving,
-        //         [
-        //             date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($dateAndTime))),
-        //             date('Y-m-d H:i',strtotime("+ ".($period)." minute", strtotime($dateAndTime))),
-        //         ])
-        //         )
-        //     }
-        // }
 
         $reserving = [
             "start"=> $startTime,
-            "end"=> date('Y-m-d H:i:s',strtotime("+ ".($period)." minute", strtotime($startTime))),
+            "end"=> date('Y-m-d H:i:s',strtotime("+ 30 minute", strtotime($startTime))),
         ];
         // var_dump($reserving);
 
         // DD("reserving",$reserving);
+
+        $now = date('Y-m-d H:i:s', strtotime('+9hour'));
 
         // おそらくここの時間でフィルターしている部分がうまく動いていない
         // ②各テーブルに対して今までの予約を見る
@@ -220,21 +212,26 @@ class ReservationsController extends Controller
             // $reservationsOnTheDayその日の予約群(reservations)を検索 (wheredateを使うとできる DDでworkしてるか確認)
             // $reservationsOnTheDay = Reservation::where('table_id', $table->id)->get();
             $reservationsOnTheDay = Reservation::whereDate('date_time', '=' , date("Y-m-d", strtotime($reserving["start"])))->get();
-                $judge = true;
-                // carbonを使ってうまく比較する
-                // 全ての表示されるコマが現在の予約状況に照らし合わせて空いているかを判断する
-                foreach($reservationsOnTheDay as $reservation){
-                    // var_dump($reserving["end"]);
-                    // var_dump($reservation["date_time"]);
-                    if($judge = $reserving["end"] < $reservation["date_time"]  || $reserving["start"] < date('Y-m-d H:i:s',strtotime("+ ".($period)." minute", strtotime($reservation["date_time"]))))
-                    return false;{
-                    // {
-                        // array_push($availableTableIds, $table->id);
-                    }
+            $judge = true;
+
+            // 現在の時刻から１時間半先までは予約できないようにする
+            if($judge = $reserving["end"] < date('Y-m-d H:i:s',strtotime("+ 85 minute", strtotime($now)))
+            )
+                return false;{
+            }
+            // 全ての表示されるコマが現在の予約状況に照らし合わせて空いているかを判断する
+            foreach($reservationsOnTheDay as $reservation){
+                // var_dump($reserving["end"]);
+                // dd($reserving["end"]);
+                // var_dump($reservation["date_time"]);
+                if($judge = ($reserving["end"] > $reservation["date_time"]
+                    && $reserving["start"] < date('Y-m-d H:i:s',strtotime("+ ".($period-1)." minute", strtotime($reservation["date_time"]))))
+                )
+                return false;{
                 }
-                array_push($availableTableIds, $table->id);
-                // var_dump($availableTableIds);
-                
+            }
+            array_push($availableTableIds, $table->id);
+            // var_dump($availableTableIds);
         }
         return $availableTableIds;
         // dd($availableTableIds);
@@ -333,6 +330,7 @@ class ReservationsController extends Controller
                 ]
             ]);
         };
+        return response()->json($items, 200);
     }
 
 
