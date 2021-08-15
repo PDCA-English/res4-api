@@ -226,6 +226,7 @@ class ReservationsController extends Controller
                 // var_dump($reservation["date_time"]);
                 if($judge = ($reserving["end"] > $reservation["date_time"]
                     && $reserving["start"] < date('Y-m-d H:i:s',strtotime("+ ".($period-1)." minute", strtotime($reservation["date_time"]))))
+                    && $reservation["table_id"] !== $table["id"]
                 )
                 return false;{
                 }
