@@ -211,7 +211,11 @@ class ReservationsController extends Controller
         foreach($tables as $table){
             // $reservationsOnTheDayその日の予約群(reservations)を検索 (wheredateを使うとできる DDでworkしてるか確認)
             // $reservationsOnTheDay = Reservation::where('table_id', $table->id)->get();
-            $reservationsOnTheDay = Reservation::whereDate('date_time', '=' , date("Y-m-d", strtotime($reserving["start"])))->get();
+            $reservationsOnTheDay = Reservation::whereDate('date_time', '=' , date("Y-m-d", strtotime($reserving["start"])))
+                                                    ->where('table_id', $table["id"])
+                                                    ->where('number_of_people', '<=', $number)
+                                                    ->get();
+
             $judge = true;
 
             // 現在の時刻から１時間半先までは予約できないようにする
@@ -226,7 +230,7 @@ class ReservationsController extends Controller
                 // var_dump($reservation["date_time"]);
                 if($judge = ($reserving["end"] > $reservation["date_time"]
                     && $reserving["start"] < date('Y-m-d H:i:s',strtotime("+ ".($period-1)." minute", strtotime($reservation["date_time"]))))
-                    && $reservation["table_id"] !== $table["id"]
+                    // && $reservation["table_id"] !== $table["id"]
                 )
                 return false;{
                 }
