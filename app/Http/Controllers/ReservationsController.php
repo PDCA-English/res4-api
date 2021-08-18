@@ -319,7 +319,10 @@ class ReservationsController extends Controller
     public function getMyReservation(Request $request)
     {
         $user_id = intval($request->user_id);
-        $data = Reservation::where('user_id', $user_id)->get();
+        $now = date('Y-m-d H:i:s', strtotime('+9hour'));
+        $data = Reservation::where('user_id', $user_id)
+                                ->whereDate('date_time', '>=' , $now)
+                                ->get();
         $items = [];
         foreach($data as $item){
             array_push($items, [

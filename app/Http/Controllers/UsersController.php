@@ -38,7 +38,10 @@ class UsersController extends Controller
         $shop_id = $request->id;
         $shop = User::where('id', $shop_id)->first();
         $table = Table::where('shop_id', $shop_id)->get();
-        $reservation = Reservation::where('shop_id', $shop_id)->get();
+        $now = date('Y-m-d H:i:s', strtotime('+9hour'));
+        $reservation = Reservation::where('shop_id', $shop_id)
+                                        ->whereDate('date_time', '>=' , $now)
+                                        ->get();
         $favorite = Favorite::where('shop_id', $shop_id)->get();
         $shops = [
             "shop" => $shop,
